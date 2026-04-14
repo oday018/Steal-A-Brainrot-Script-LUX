@@ -1,6 +1,6 @@
 --[[
-    EclipseX Style UI Library - Mini Version with Mobile Buttons
-    قائمة صغيرة + أزرار يمين
+    EclipseX Style UI Library - Red Version
+    قائمة صغيرة + أزرار يمين (3x2) + لون أحمر + قابل للسحب
 ]]
 
 local Players = game:GetService("Players")
@@ -9,23 +9,58 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
--- Colors
-local ACCENT  = Color3.fromRGB(180,100,255)
-local WHITE   = Color3.fromRGB(240,240,255)
-local BG      = Color3.fromRGB(8,8,12)
-local CARD    = Color3.fromRGB(14,14,22)
-local OFF_CLR = Color3.fromRGB(35,35,50)
-local MOB_ON  = Color3.fromRGB(130,60,220)
-local MOB_OFF = Color3.fromRGB(14,10,24)
+-- Colors - أحمر
+local ACCENT  = Color3.fromRGB(255, 60, 60)      -- أحمر فاتح
+local WHITE   = Color3.fromRGB(240, 240, 240)
+local BG      = Color3.fromRGB(12, 8, 8)         -- أسود محمر
+local CARD    = Color3.fromRGB(22, 14, 14)       -- كرت محمر
+local OFF_CLR = Color3.fromRGB(50, 35, 35)       -- رمادي محمر
+local MOB_ON  = Color3.fromRGB(220, 60, 60)      -- أحمر للأزرار المشغلة
+local MOB_OFF = Color3.fromRGB(24, 10, 10)       -- أحمر غامق للأزرار المطفية
 
 -- State
 local toggleStates = {}
 local mobileButtons = {}
 local mobBtnRefs = {}
 
+-- Config
+local CONFIG_KEY = "EclipseX_Red_UI_Config"
+
+local function saveConfig()
+    pcall(function()
+        if writefile then
+            local data = {positions = {}}
+            -- حفظ مواقع الأزرار
+            for name, btn in pairs(mobBtnRefs) do
+                data.positions["mob_"..name] = {x = btn.Position.X.Offset, y = btn.Position.Y.Offset}
+            end
+            for _, btn in ipairs(mobileButtons) do
+                if not btn:GetAttribute("hasToggle") then
+                    data.positions["mob_"..btn.Name] = {x = btn.Position.X.Offset, y = btn.Position.Y.Offset}
+                end
+            end
+            writefile(CONFIG_KEY..".json", game:GetService("HttpService"):JSONEncode(data))
+        end
+    end)
+end
+
+local function loadConfig()
+    pcall(function()
+        if readfile and isfile and isfile(CONFIG_KEY..".json") then
+            local ok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(readfile(CONFIG_KEY..".json")) end)
+            if ok and data and data.positions then
+                return data.positions
+            end
+        end
+    end)
+    return {}
+end
+
+local savedPositions = loadConfig()
+
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EclipseX_Mini"
+ScreenGui.Name = "EclipseX_Red"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
@@ -49,14 +84,14 @@ MainStroke.Color = ACCENT
 -- Title Bar
 local TitleBar = Instance.new("Frame", MainFrame)
 TitleBar.Size = UDim2.new(1, 0, 0, 28)
-TitleBar.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+TitleBar.BackgroundColor3 = Color3.fromRGB(18, 10, 10)
 TitleBar.BorderSizePixel = 0
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
 
 local TitleFix = Instance.new("Frame", TitleBar)
 TitleFix.Size = UDim2.new(1, 0, 0, 10)
 TitleFix.Position = UDim2.new(0, 0, 1, -10)
-TitleFix.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+TitleFix.BackgroundColor3 = Color3.fromRGB(18, 10, 10)
 TitleFix.BorderSizePixel = 0
 
 local TitleLbl = Instance.new("TextLabel", TitleBar)
@@ -124,6 +159,34 @@ end
 
 for i, tb in ipairs(tabs) do
     tb.MouseButton1Click:Connect(function() selectTab(i) end)
+end
+
+-- ============================================
+-- نظام السحب للأزرار
+-- ============================================
+local function makeDraggable(btn, saveName)
+    local dragging, dragStart, startPos = false, nil, nil
+    
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = btn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    if saveName then saveConfig() end
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+            local d = input.Position - dragStart
+            btn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end)
 end
 
 -- ============================================
@@ -218,7 +281,7 @@ end
 function Library:AddButton(parent, text, order, callback)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 26)
-    row.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    row.BackgroundColor3 = Color3.fromRGB(40, 20, 20)
     row.BorderSizePixel = 0
     row.LayoutOrder = order or 1
     Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
@@ -258,7 +321,7 @@ function Library:AddSlider(parent, label, min, max, default, order, callback)
     local sliderBg = Instance.new("Frame", row)
     sliderBg.Size = UDim2.new(1, -12, 0, 3)
     sliderBg.Position = UDim2.new(0, 6, 0, 22)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(40, 30, 30)
     Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
     
     local fill = Instance.new("Frame", sliderBg)
@@ -316,7 +379,21 @@ end
 function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
     local btn = Instance.new("TextButton", ScreenGui)
     btn.Size = UDim2.new(0, 48, 0, 48)
-    btn.Position = UDim2.new(1, xOffset, 0.5, yOffset)
+    
+    -- تحميل الموقع المحفوظ أو استخدام الافتراضي
+    local savedPos = nil
+    if toggleName then
+        savedPos = savedPositions["mob_"..toggleName]
+    else
+        savedPos = savedPositions["mob_"..label]
+    end
+    
+    if savedPos then
+        btn.Position = UDim2.new(0, savedPos.x, 0, savedPos.y)
+    else
+        btn.Position = UDim2.new(1, xOffset, 0.5, yOffset)
+    end
+    
     btn.BackgroundColor3 = MOB_OFF
     btn.BackgroundTransparency = 0.1
     btn.Text = label
@@ -326,14 +403,36 @@ function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
     btn.TextWrapped = true
     btn.BorderSizePixel = 0
     btn.ZIndex = 20
+    btn.Name = toggleName or label
+    
+    if not toggleName then
+        btn:SetAttribute("hasToggle", false)
+    else
+        btn:SetAttribute("hasToggle", true)
+    end
+    
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     local s = Instance.new("UIStroke", btn)
     s.Color = ACCENT
     s.Thickness = 1
     s.Transparency = 0.3
+    
+    -- جعل الزر قابل للسحب
+    makeDraggable(btn, true)
+    
     table.insert(mobileButtons, btn)
     if toggleName then mobBtnRefs[toggleName] = btn end
-    btn.MouseButton1Click:Connect(callback)
+    
+    btn.MouseButton1Click:Connect(function()
+        -- إذا كان الزر من النوع Toggle، نغير حالته
+        if toggleName then
+            local state = not Library:GetToggleState(toggleName)
+            Library:SetToggleState(toggleName, state)
+        end
+        -- ننفذ الكولباك دائماً
+        callback()
+    end)
+    
     return btn
 end
 
@@ -359,7 +458,7 @@ end
 -- ============================================
 
 Library:AddSection(Tab1Frame, "COMBAT", 1)
-Library:AddToggle(Tab1Frame, "Aimbot", 2, function(v) end)
+Library:AddToggle(Tab1Frame, "كل زق و صور", 2, function(v) end)
 Library:AddToggle(Tab1Frame, "Trigger Bot", 3, function(v) end)
 
 Library:AddSection(Tab1Frame, "MOVEMENT", 4)
@@ -368,8 +467,8 @@ Library:AddSlider(Tab1Frame, "Speed", 16, 200, 50, 6, function(v) end)
 Library:AddToggle(Tab1Frame, "Fly Hack", 7, function(v) end)
 
 Library:AddSection(Tab1Frame, "ACTIONS", 8)
-Library:AddButton(Tab1Frame, "Kill All", 9, function() end)
-Library:AddButton(Tab1Frame, "Teleport", 10, function() end)
+Library:AddButton(Tab1Frame, "Kill All", 9, function() print("Kill All!") end)
+Library:AddButton(Tab1Frame, "Teleport", 10, function() print("Teleport!") end)
 
 Library:AddSection(Tab2Frame, "ESP", 1)
 Library:AddToggle(Tab2Frame, "Player ESP", 2, function(v) end, true)
@@ -381,38 +480,38 @@ Library:AddToggle(Tab2Frame, "Full Bright", 6, function(v) end)
 Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) end)
 
 -- ============================================
--- أزرار الموبايل على اليمين
+-- أزرار الموبايل على اليمين - 3 أعمدة × صفين
 -- ============================================
 do
-    local startY = -150
-    local gap = 55
-    local col1 = -55  -- عمود واحد فقط
+    local startY = -100
+    local gapY = 55
+    local gapX = 55
+    local col1 = -110
+    local col2 = -55
     
-    Library:AddMobileButton("AIMBOT", col1, startY + gap*0, "Aimbot", function()
-        local state = not Library:GetToggleState("Aimbot")
-        Library:SetToggleState("Aimbot", state)
+    -- الصف الأول
+    Library:AddMobileButton("AIMBOT", col1, startY, "Aimbot", function()
+        print("Aimbot toggled!")
     end)
     
-    Library:AddMobileButton("SPEED", col1, startY + gap*1, "Speed Hack", function()
-        local state = not Library:GetToggleState("Speed Hack")
-        Library:SetToggleState("Speed Hack", state)
+    Library:AddMobileButton("SPEED", col2, startY, "Speed Hack", function()
+        print("Speed toggled!")
     end)
     
-    Library:AddMobileButton("FLY", col1, startY + gap*2, "Fly Hack", function()
-        local state = not Library:GetToggleState("Fly Hack")
-        Library:SetToggleState("Fly Hack", state)
+    Library:AddMobileButton("FLY", col2 + gapX, startY, "Fly Hack", function()
+        print("Fly toggled!")
     end)
     
-    Library:AddMobileButton("ESP", col1, startY + gap*3, "Player ESP", function()
-        local state = not Library:GetToggleState("Player ESP")
-        Library:SetToggleState("Player ESP", state)
+    -- الصف الثاني
+    Library:AddMobileButton("ESP", col1, startY + gapY, "Player ESP", function()
+        print("ESP toggled!")
     end)
     
-    Library:AddMobileButton("KILL", col1, startY + gap*4, nil, function()
+    Library:AddMobileButton("KILL", col2, startY + gapY, nil, function()
         print("Kill All!")
     end)
     
-    Library:AddMobileButton("TP", col1, startY + gap*5, nil, function()
+    Library:AddMobileButton("TP", col2 + gapX, startY + gapY, nil, function()
         print("Teleport!")
     end)
 end
@@ -428,37 +527,29 @@ do
     
     local OBtn = Instance.new("TextButton", OCGui)
     OBtn.Size = UDim2.new(0, 36, 0, 36)
-    OBtn.Position = UDim2.new(0, 6, 0.5, -18)
-    OBtn.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
+    
+    local savedPos = savedPositions["mob_MenuButton"]
+    if savedPos then
+        OBtn.Position = UDim2.new(0, savedPos.x, 0, savedPos.y)
+    else
+        OBtn.Position = UDim2.new(0, 6, 0.5, -18)
+    end
+    
+    OBtn.BackgroundColor3 = Color3.fromRGB(18, 10, 10)
     OBtn.Text = "💠"
     OBtn.TextSize = 16
     OBtn.Font = Enum.Font.GothamBold
     OBtn.TextColor3 = WHITE
     OBtn.BorderSizePixel = 0
     OBtn.Active = true
+    OBtn.Name = "MenuButton"
     Instance.new("UICorner", OBtn).CornerRadius = UDim.new(0, 8)
     
     local OS = Instance.new("UIStroke", OBtn)
     OS.Thickness = 1
     OS.Color = ACCENT
     
-    local dragging, dragStart, startPos = false, nil, nil
-    OBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = OBtn.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
-            local d = input.Position - dragStart
-            OBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
-        end
-    end)
+    makeDraggable(OBtn, true)
     
     OBtn.MouseButton1Click:Connect(function()
         Library:Toggle()
@@ -512,5 +603,12 @@ do
     end)
 end
 
-print("EclipseX Mini UI with Mobile Buttons Loaded!")
+-- Auto-save كل 5 ثواني
+task.spawn(function()
+    while task.wait(5) do
+        saveConfig()
+    end
+end)
+
+print("EclipseX Red UI - Mobile Buttons 3x2 - Loaded!")
 return Library
