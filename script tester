@@ -1,7 +1,7 @@
 --[[
-    OR's Simple Hub Library
-    ستة أزرار خارجية جاهزة - نفس ستايل ORsDuel_v4
-    بسيط، نظيف، مباشر
+    OR's Simple Hub Library v2
+    منيو دائري يسار + 6 أزرار خارجية
+    تقدر تفتح/تقفل المنيو - تفتح/تقفل كل زر براحتك
 ]]
 
 local UIS = game:GetService("UserInputService")
@@ -25,6 +25,9 @@ Screen.Parent = CoreGui
 local C = {
     Black = Color3.fromRGB(0, 0, 0),
     White = Color3.fromRGB(230, 230, 230),
+    Gray = Color3.fromRGB(160, 160, 160),
+    DarkRow = Color3.fromRGB(18, 18, 18),
+    TogOff = Color3.fromRGB(40, 40, 48),
 }
 
 local STROKE_ACTIVE = Color3.fromRGB(160, 30, 30)
@@ -203,7 +206,7 @@ function CreateHub(config)
     frame.BackgroundColor3 = C.Black
     frame.Active = true
     frame.ZIndex = 5
-    frame.Visible = true
+    frame.Visible = config.Visible ~= false
     
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
     applyGradient(frame)
@@ -305,7 +308,291 @@ function GetHub(name)
 end
 
 -- ============================================
--- Intro Animation (نفس ستايل ORsDuel)
+-- إنشاء 6 أزرار خارجية (مخفية في البداية)
+-- ============================================
+
+-- زر 1: Speed
+local speedHub = CreateHub({
+    Name = "Speed",
+    Text = "⚡ SPEED",
+    Width = 110,
+    PositionX = 20,
+    PositionY = 100,
+    ShowDot = true,
+    Visible = false, -- يبدأ مخفي
+    OnToggle = function(state)
+        print("Speed: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- زر 2: Fly
+local flyHub = CreateHub({
+    Name = "Fly",
+    Text = "🦅 FLY",
+    Width = 100,
+    PositionX = 140,
+    PositionY = 100,
+    ShowDot = true,
+    Visible = false,
+    Keybind = Enum.KeyCode.F,
+    OnToggle = function(state)
+        print("Fly: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- زر 3: ESP
+local espHub = CreateHub({
+    Name = "ESP",
+    Text = "👁 ESP",
+    Width = 95,
+    PositionX = 250,
+    PositionY = 100,
+    ShowDot = true,
+    Visible = false,
+    OnToggle = function(state)
+        print("ESP: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- زر 4: Aimbot
+local aimbotHub = CreateHub({
+    Name = "Aimbot",
+    Text = "🎯 AIM",
+    Width = 95,
+    PositionX = 355,
+    PositionY = 100,
+    ShowDot = true,
+    Visible = false,
+    Keybind = Enum.KeyCode.V,
+    OnToggle = function(state)
+        print("Aimbot: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- زر 5: Teleport
+local teleportHub = CreateHub({
+    Name = "Teleport",
+    Text = "📍 TP",
+    Width = 100,
+    PositionX = 20,
+    PositionY = 145,
+    ShowDot = false,
+    Visible = false,
+    OnToggle = function(state)
+        print("Teleport: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- زر 6: Auto Farm
+local autoFarmHub = CreateHub({
+    Name = "AutoFarm",
+    Text = "🤖 FARM",
+    Width = 120,
+    PositionX = 130,
+    PositionY = 145,
+    ShowDot = true,
+    Visible = false,
+    OnToggle = function(state)
+        print("Auto Farm: " .. (state and "ON" or "OFF"))
+    end,
+})
+
+-- ============================================
+-- القائمة الدائرية (يسار الشاشة)
+-- ============================================
+local MenuFrame = Instance.new("Frame", Screen)
+MenuFrame.Name = "CircularMenu"
+MenuFrame.Size = UDim2.new(0, 200, 0, 280)
+MenuFrame.Position = UDim2.new(0, 10, 0.5, -140)
+MenuFrame.BackgroundColor3 = C.Black
+MenuFrame.BackgroundTransparency = 0.1
+MenuFrame.BorderSizePixel = 0
+MenuFrame.Visible = false
+MenuFrame.ZIndex = 10
+
+Instance.new("UICorner", MenuFrame).CornerRadius = UDim.new(0, 20)
+addStroke(MenuFrame)
+
+-- شريط العنوان للسحب
+local MenuHeader = Instance.new("Frame", MenuFrame)
+MenuHeader.Size = UDim2.new(1, 0, 0, 36)
+MenuHeader.BackgroundTransparency = 1
+
+local MenuTitle = Instance.new("TextLabel", MenuHeader)
+MenuTitle.Size = UDim2.new(1, 0, 1, 0)
+MenuTitle.BackgroundTransparency = 1
+MenuTitle.Text = "CONTROLS"
+MenuTitle.TextColor3 = C.White
+MenuTitle.Font = Enum.Font.GothamBlack
+MenuTitle.TextSize = 16
+MenuTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+MakeDrag(MenuFrame, MenuHeader)
+
+-- زر إغلاق القائمة
+local CloseMenuBtn = Instance.new("TextButton", MenuHeader)
+CloseMenuBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseMenuBtn.Position = UDim2.new(1, -28, 0, 6)
+CloseMenuBtn.BackgroundColor3 = Color3.fromRGB(160, 30, 30)
+CloseMenuBtn.Text = "✕"
+CloseMenuBtn.TextColor3 = C.White
+CloseMenuBtn.Font = Enum.Font.GothamBold
+CloseMenuBtn.TextSize = 14
+CloseMenuBtn.AutoButtonColor = false
+Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 12)
+
+CloseMenuBtn.MouseButton1Click:Connect(function()
+    MenuFrame.Visible = false
+end)
+
+-- محتوى القائمة (الأزرار)
+local MenuContent = Instance.new("ScrollingFrame", MenuFrame)
+MenuContent.Size = UDim2.new(1, -8, 1, -44)
+MenuContent.Position = UDim2.new(0, 4, 0, 40)
+MenuContent.BackgroundTransparency = 1
+MenuContent.ScrollBarThickness = 3
+MenuContent.ScrollBarImageColor3 = C.Gray
+MenuContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+MenuContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local ContentList = Instance.new("UIListLayout", MenuContent)
+ContentList.Padding = UDim.new(0, 6)
+ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- دالة إنشاء زر داخل القائمة
+local function AddMenuButton(text, hub)
+    local row = Instance.new("Frame", MenuContent)
+    row.Size = UDim2.new(1, -8, 0, 40)
+    row.BackgroundColor3 = C.DarkRow
+    row.BackgroundTransparency = 0.3
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    
+    local label = Instance.new("TextLabel", row)
+    label.Size = UDim2.new(0, 100, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = C.White
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local isHubVisible = hub.Frame.Visible
+    
+    local toggleBtn = Instance.new("TextButton", row)
+    toggleBtn.Size = UDim2.new(0, 50, 0, 24)
+    toggleBtn.Position = UDim2.new(1, -62, 0.5, -12)
+    toggleBtn.BackgroundColor3 = isHubVisible and C.Gray or C.TogOff
+    toggleBtn.Text = isHubVisible and "HIDE" or "SHOW"
+    toggleBtn.TextColor3 = C.White
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.TextSize = 11
+    toggleBtn.AutoButtonColor = false
+    Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 6)
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        local newState = not hub.Frame.Visible
+        hub.Frame.Visible = newState
+        toggleBtn.BackgroundColor3 = newState and C.Gray or C.TogOff
+        toggleBtn.Text = newState and "HIDE" or "SHOW"
+    end)
+    
+    return row
+end
+
+-- إضافة الأزرار للقائمة
+AddMenuButton("Speed Hack", speedHub)
+AddMenuButton("Fly Hack", flyHub)
+AddMenuButton("Player ESP", espHub)
+AddMenuButton("Aimbot", aimbotHub)
+AddMenuButton("Teleport", teleportHub)
+AddMenuButton("Auto Farm", autoFarmHub)
+
+-- ============================================
+-- الزر الدائري الرئيسي (يسار الشاشة)
+-- ============================================
+local MainButton = Instance.new("ImageButton", Screen)
+MainButton.Name = "MainCircleButton"
+MainButton.Size = UDim2.new(0, 55, 0, 55)
+MainButton.Position = UDim2.new(0, 15, 0.5, -27)
+MainButton.BackgroundColor3 = C.Black
+MainButton.BackgroundTransparency = 0
+MainButton.BorderSizePixel = 0
+MainButton.ZIndex = 20
+MainButton.AutoButtonColor = false
+
+Instance.new("UICorner", MainButton).CornerRadius = UDim.new(1, 0)
+addStroke(MainButton)
+
+-- أيقونة الدائرة
+local IconLabel = Instance.new("TextLabel", MainButton)
+IconLabel.Size = UDim2.new(1, 0, 1, 0)
+IconLabel.BackgroundTransparency = 1
+IconLabel.Text = "☰"
+IconLabel.TextColor3 = C.White
+IconLabel.Font = Enum.Font.GothamBlack
+IconLabel.TextSize = 28
+IconLabel.TextXAlignment = Enum.TextXAlignment.Center
+IconLabel.TextYAlignment = Enum.TextYAlignment.Center
+IconLabel.ZIndex = 21
+
+-- حالة القائمة
+local isMenuOpen = false
+
+-- فتح/إغلاق القائمة
+MainButton.MouseButton1Click:Connect(function()
+    isMenuOpen = not isMenuOpen
+    MenuFrame.Visible = isMenuOpen
+    
+    -- تأثير نبض بسيط
+    TweenService:Create(MainButton, TweenInfo.new(0.15, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(0, 60, 0, 60),
+        Position = UDim2.new(0, 12, 0.5, -30),
+    }):Play()
+    
+    task.wait(0.1)
+    
+    TweenService:Create(MainButton, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(0, 55, 0, 55),
+        Position = UDim2.new(0, 15, 0.5, -27),
+    }):Play()
+end)
+
+-- حفظ موقع الزر الدائري
+MakeDrag(MainButton, function()
+    local ap = MainButton.AbsolutePosition
+    _globalConfig["MainButtonPos"] = {px = ap.X, py = ap.Y}
+    saveConfig()
+end)
+
+-- تحميل موقع الزر الدائري
+local savedMainPos = _globalConfig["MainButtonPos"]
+if savedMainPos then
+    MainButton.Position = UDim2.new(0, savedMainPos.px, 0, savedMainPos.py)
+end
+
+-- ============================================
+-- Keybind للزر الدائري (RightCtrl)
+-- ============================================
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        isMenuOpen = not isMenuOpen
+        MenuFrame.Visible = isMenuOpen
+    end
+end)
+
+-- ============================================
+-- Auto Save
+-- ============================================
+task.spawn(function()
+    while task.wait(10) do
+        saveConfig()
+    end
+end)
+
+-- ============================================
+-- Intro Animation
 -- ============================================
 task.spawn(function()
     local introGui = Instance.new("ScreenGui", CoreGui)
@@ -345,8 +632,8 @@ task.spawn(function()
     }):Play()
     task.wait(0.35)
 
-    local part1 = "Orksz Simple"
-    local part2 = " > Hub Library"
+    local part1 = "OR's Hub"
+    local part2 = " v2.0"
     local full = part1 .. part2
 
     for i = 1, #full do
@@ -378,113 +665,9 @@ task.spawn(function()
 end)
 
 -- ============================================
--- إنشاء 6 أزرار خارجية جاهزة (ما يسوون شي)
--- ============================================
-
--- زر 1: Speed (يسار فوق)
-CreateHub({
-    Name = "Speed",
-    Text = "⚡ SPEED",
-    Width = 110,
-    PositionX = 20,
-    PositionY = 100,
-    ShowDot = true,
-    OnToggle = function(state)
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- زر 2: Fly (يمين زر 1)
-CreateHub({
-    Name = "Fly",
-    Text = "🦅 FLY",
-    Width = 100,
-    PositionX = 140,
-    PositionY = 100,
-    ShowDot = true,
-    Keybind = Enum.KeyCode.F,
-    OnToggle = function(state)
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- زر 3: ESP (يمين زر 2)
-CreateHub({
-    Name = "ESP",
-    Text = "👁 ESP",
-    Width = 95,
-    PositionX = 250,
-    PositionY = 100,
-    ShowDot = true,
-    OnToggle = function(state)
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- زر 4: Aimbot (يمين زر 3)
-CreateHub({
-    Name = "Aimbot",
-    Text = "🎯 AIM",
-    Width = 95,
-    PositionX = 355,
-    PositionY = 100,
-    ShowDot = true,
-    Keybind = Enum.KeyCode.V,
-    OnToggle = function(state)
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- زر 5: Teleport (تحت - صف ثاني)
-CreateHub({
-    Name = "Teleport",
-    Text = "📍 TP",
-    Width = 100,
-    PositionX = 20,
-    PositionY = 145,
-    ShowDot = false,
-    OnEnable = function()
-        -- فاضي، ما يسوي شي
-    end,
-    OnDisable = function()
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- زر 6: Auto Farm (تحت - صف ثاني)
-CreateHub({
-    Name = "AutoFarm",
-    Text = "🤖 FARM",
-    Width = 120,
-    PositionX = 130,
-    PositionY = 145,
-    ShowDot = true,
-    OnToggle = function(state)
-        -- فاضي، ما يسوي شي
-    end,
-})
-
--- ============================================
--- Auto Save
--- ============================================
-task.spawn(function()
-    while task.wait(10) do
-        saveConfig()
-    end
-end)
-
--- ============================================
 -- Ready Message
 -- ============================================
 print("====================================")
-print("OR's Simple Hub Library Loaded!")
-print("6 External Hubs Ready")
-print("Drag them anywhere - Auto Save ON")
+print("OR's Hub v2.0 Loaded!")
+print("Click the circle button or press RightCtrl")
 print("====================================")
-
--- ============================================
--- Example: How to access a hub later
--- ============================================
--- local speedHub = GetHub("Speed")
--- speedHub:SetText("FAST")
--- print(speedHub:IsActive())
