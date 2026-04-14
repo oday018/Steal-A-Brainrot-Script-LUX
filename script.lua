@@ -3,7 +3,7 @@
     يشمل: Aimbot, ESP, Speed, Fly, TP, Auto Farm
 ]]
 
-local Library = loadstring(game:HttpGet("https://pastebin.com/raw/sR3Bt0Nd"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/oday018/Steal-A-Brainrot-Script-LUX/refs/heads/main/GUL.lua"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
