@@ -355,7 +355,7 @@ do
     OBtn.Size = UDim2.new(0, 36, 0, 36)
     OBtn.Position = UDim2.new(0, 6, 0.5, -18)
     OBtn.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
-    OBtn.Text = "💠"
+    OBtn.Text = "🐒"
     OBtn.TextSize = 16
     OBtn.Font = Enum.Font.GothamBold
     OBtn.TextColor3 = WHITE
