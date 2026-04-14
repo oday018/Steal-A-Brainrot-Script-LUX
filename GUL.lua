@@ -1,6 +1,6 @@
 --[[
-    EclipseX Style UI Library - Mini Version
-    قائمة صغيرة جداً
+    EclipseX Style UI Library - Mini Version with Mobile Buttons
+    قائمة صغيرة + أزرار يمين
 ]]
 
 local Players = game:GetService("Players")
@@ -15,12 +15,13 @@ local WHITE   = Color3.fromRGB(240,240,255)
 local BG      = Color3.fromRGB(8,8,12)
 local CARD    = Color3.fromRGB(14,14,22)
 local OFF_CLR = Color3.fromRGB(35,35,50)
+local MOB_ON  = Color3.fromRGB(130,60,220)
+local MOB_OFF = Color3.fromRGB(14,10,24)
 
 -- State
 local toggleStates = {}
-
-local function saveConfig() end
-local function loadConfig() end
+local mobileButtons = {}
+local mobBtnRefs = {}
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -29,7 +30,7 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
--- قائمة صغيرة جداً: 220x340
+-- قائمة صغيرة: 220x340
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 220, 0, 340)
@@ -45,7 +46,7 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Thickness = 1
 MainStroke.Color = ACCENT
 
--- Title Bar - أصغر
+-- Title Bar
 local TitleBar = Instance.new("Frame", MainFrame)
 TitleBar.Size = UDim2.new(1, 0, 0, 28)
 TitleBar.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
@@ -66,7 +67,7 @@ TitleLbl.Font = Enum.Font.GothamBlack
 TitleLbl.TextSize = 13
 TitleLbl.TextColor3 = WHITE
 
--- Tabs - أصغر
+-- Tabs
 local TabContainer = Instance.new("Frame", MainFrame)
 TabContainer.Size = UDim2.new(1, -12, 0, 22)
 TabContainer.Position = UDim2.new(0, 6, 0, 32)
@@ -126,7 +127,7 @@ for i, tb in ipairs(tabs) do
 end
 
 -- ============================================
--- LIBRARY API - Mini Version
+-- LIBRARY API
 -- ============================================
 
 local Library = {}
@@ -192,6 +193,11 @@ function Library:AddToggle(parent, name, order, callback, defaultOn)
         track.BackgroundColor3 = ns and ACCENT or OFF_CLR
         dot.Position = ns and UDim2.new(1, -dSz-2, 0.5, -dSz/2) or UDim2.new(0, 2, 0.5, -dSz/2)
         if callback then callback(ns) end
+        if mobBtnRefs[name] then
+            TweenService:Create(mobBtnRefs[name], TweenInfo.new(0.15), {
+                BackgroundColor3 = ns and MOB_ON or MOB_OFF
+            }):Play()
+        end
     end)
     
     return {
@@ -199,6 +205,11 @@ function Library:AddToggle(parent, name, order, callback, defaultOn)
             toggleStates[name].state = state
             track.BackgroundColor3 = state and ACCENT or OFF_CLR
             dot.Position = state and UDim2.new(1, -dSz-2, 0.5, -dSz/2) or UDim2.new(0, 2, 0.5, -dSz/2)
+            if mobBtnRefs[name] then
+                TweenService:Create(mobBtnRefs[name], TweenInfo.new(0.15), {
+                    BackgroundColor3 = state and MOB_ON or MOB_OFF
+                }):Play()
+            end
         end,
         GetState = function() return toggleStates[name].state end,
     }
@@ -302,6 +313,30 @@ function Library:AddSlider(parent, label, min, max, default, order, callback)
     }
 end
 
+function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
+    local btn = Instance.new("TextButton", ScreenGui)
+    btn.Size = UDim2.new(0, 48, 0, 48)
+    btn.Position = UDim2.new(1, xOffset, 0.5, yOffset)
+    btn.BackgroundColor3 = MOB_OFF
+    btn.BackgroundTransparency = 0.1
+    btn.Text = label
+    btn.TextColor3 = WHITE
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 8
+    btn.TextWrapped = true
+    btn.BorderSizePixel = 0
+    btn.ZIndex = 20
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    local s = Instance.new("UIStroke", btn)
+    s.Color = ACCENT
+    s.Thickness = 1
+    s.Transparency = 0.3
+    table.insert(mobileButtons, btn)
+    if toggleName then mobBtnRefs[toggleName] = btn end
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
 function Library:Show() MainFrame.Visible = true end
 function Library:Hide() MainFrame.Visible = false end
 function Library:Toggle() MainFrame.Visible = not MainFrame.Visible end
@@ -312,38 +347,78 @@ function Library:SetToggleState(name, state)
     t.state = state
     t.track.BackgroundColor3 = state and ACCENT or OFF_CLR
     t.dot.Position = state and UDim2.new(1, -t.dotSz-2, 0.5, -t.dotSz/2) or UDim2.new(0, 2, 0.5, -t.dotSz/2)
+    if mobBtnRefs[name] then
+        TweenService:Create(mobBtnRefs[name], TweenInfo.new(0.15), {
+            BackgroundColor3 = state and MOB_ON or MOB_OFF
+        }):Play()
+    end
 end
 
 -- ============================================
--- مثال: عناصر
+-- إضافة العناصر للقائمة
 -- ============================================
 
 Library:AddSection(Tab1Frame, "COMBAT", 1)
 Library:AddToggle(Tab1Frame, "Aimbot", 2, function(v) end)
-Library:AddToggle(Tab1Frame, "Trigger", 3, function(v) end)
+Library:AddToggle(Tab1Frame, "Trigger Bot", 3, function(v) end)
 
 Library:AddSection(Tab1Frame, "MOVEMENT", 4)
-Library:AddToggle(Tab1Frame, "Speed", 5, function(v) end)
+Library:AddToggle(Tab1Frame, "Speed Hack", 5, function(v) end)
 Library:AddSlider(Tab1Frame, "Speed", 16, 200, 50, 6, function(v) end)
-Library:AddToggle(Tab1Frame, "Fly", 7, function(v) end)
-Library:AddSlider(Tab1Frame, "Fly Speed", 20, 200, 50, 8, function(v) end)
+Library:AddToggle(Tab1Frame, "Fly Hack", 7, function(v) end)
 
-Library:AddSection(Tab1Frame, "ACTIONS", 9)
-Library:AddButton(Tab1Frame, "Kill All", 10, function() end)
-Library:AddButton(Tab1Frame, "Teleport", 11, function() end)
+Library:AddSection(Tab1Frame, "ACTIONS", 8)
+Library:AddButton(Tab1Frame, "Kill All", 9, function() end)
+Library:AddButton(Tab1Frame, "Teleport", 10, function() end)
 
 Library:AddSection(Tab2Frame, "ESP", 1)
 Library:AddToggle(Tab2Frame, "Player ESP", 2, function(v) end, true)
 Library:AddToggle(Tab2Frame, "Boxes", 3, function(v) end)
 Library:AddToggle(Tab2Frame, "Tracers", 4, function(v) end)
-Library:AddToggle(Tab2Frame, "Names", 5, function(v) end)
 
-Library:AddSection(Tab2Frame, "WORLD", 6)
-Library:AddToggle(Tab2Frame, "Full Bright", 7, function(v) end)
-Library:AddToggle(Tab2Frame, "No Fog", 8, function(v) end)
+Library:AddSection(Tab2Frame, "WORLD", 5)
+Library:AddToggle(Tab2Frame, "Full Bright", 6, function(v) end)
+Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) end)
 
 -- ============================================
--- Open/Close Button - صغير جداً
+-- أزرار الموبايل على اليمين
+-- ============================================
+do
+    local startY = -150
+    local gap = 55
+    local col1 = -55  -- عمود واحد فقط
+    
+    Library:AddMobileButton("AIMBOT", col1, startY + gap*0, "Aimbot", function()
+        local state = not Library:GetToggleState("Aimbot")
+        Library:SetToggleState("Aimbot", state)
+    end)
+    
+    Library:AddMobileButton("SPEED", col1, startY + gap*1, "Speed Hack", function()
+        local state = not Library:GetToggleState("Speed Hack")
+        Library:SetToggleState("Speed Hack", state)
+    end)
+    
+    Library:AddMobileButton("FLY", col1, startY + gap*2, "Fly Hack", function()
+        local state = not Library:GetToggleState("Fly Hack")
+        Library:SetToggleState("Fly Hack", state)
+    end)
+    
+    Library:AddMobileButton("ESP", col1, startY + gap*3, "Player ESP", function()
+        local state = not Library:GetToggleState("Player ESP")
+        Library:SetToggleState("Player ESP", state)
+    end)
+    
+    Library:AddMobileButton("KILL", col1, startY + gap*4, nil, function()
+        print("Kill All!")
+    end)
+    
+    Library:AddMobileButton("TP", col1, startY + gap*5, nil, function()
+        print("Teleport!")
+    end)
+end
+
+-- ============================================
+-- Open/Close Button - يسار
 -- ============================================
 do
     local OCGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -355,7 +430,7 @@ do
     OBtn.Size = UDim2.new(0, 36, 0, 36)
     OBtn.Position = UDim2.new(0, 6, 0.5, -18)
     OBtn.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
-    OBtn.Text = "🐒"
+    OBtn.Text = "💠"
     OBtn.TextSize = 16
     OBtn.Font = Enum.Font.GothamBold
     OBtn.TextColor3 = WHITE
@@ -413,7 +488,7 @@ do
     end)
 end
 
--- FPS صغير
+-- FPS
 do
     local FPSLbl = Instance.new("TextLabel", TitleBar)
     FPSLbl.Size = UDim2.new(0, 40, 0, 12)
@@ -437,5 +512,5 @@ do
     end)
 end
 
-print("EclipseX Mini UI Loaded!")
+print("EclipseX Mini UI with Mobile Buttons Loaded!")
 return Library
