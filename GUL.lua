@@ -479,15 +479,15 @@ Library:AddToggle(Tab2Frame, "Full Bright", 6, function(v) end)
 Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) end)
 
 -- ============================================
--- أزرار الموبايل - عمودين (3 في كل عمود) - مطلوعين يمين أكثر
+-- أزرار الموبايل - عمودين (3 في كل عمود) - أقصى اليسار
 -- ============================================
 do
     local startY = -100   -- نقطة البداية العمودية
     local gapY = 55       -- المسافة بين الأزرار عمودياً
-    local col1 = -45      -- العمود الأيسر (قيمة أصغر = أقرب لليمين)
-    local col2 = -5       -- العمود الأيمن (ملاصق للحافة تقريباً)
+    local col1 = 5        -- العمود الأيسر (ملاصق لليسار)
+    local col2 = 60       -- العمود الأيمن (أبعد شوي عن اليسار)
     
-    -- العمود الأيسر (3 أزرار)
+    -- العمود الأيسر (3 أزرار) - أقصى اليسار
     Library:AddMobileButton("AIMBOT", col1, startY, "Aimbot", function()
         print("Aimbot toggled!")
     end)
@@ -500,7 +500,7 @@ do
         print("Fly toggled!")
     end)
     
-    -- العمود الأيمن (3 أزرار) - ملاصق لليمين
+    -- العمود الأيمن (3 أزرار) - جنب العمود الأيسر
     Library:AddMobileButton("ESP", col2, startY, "Player ESP", function()
         print("ESP toggled!")
     end)
