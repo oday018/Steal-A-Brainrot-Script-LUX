@@ -1,13 +1,12 @@
 --[[
-    EclipseX Style UI Library - Compact Version
-    قائمة صغيرة ومرتبة
+    EclipseX Style UI Library - Mini Version
+    قائمة صغيرة جداً
 ]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local Stats = game:GetService("Stats")
 local player = Players.LocalPlayer
 
 -- Colors
@@ -19,76 +18,43 @@ local OFF_CLR = Color3.fromRGB(35,35,50)
 
 -- State
 local toggleStates = {}
-local changingKeybind = nil
 
--- Config
-local CONFIG_KEY = "EclipseX_UI_Config"
-local Keybinds = {
-    Toggle1 = Enum.KeyCode.Q,
-    Toggle2 = Enum.KeyCode.E,
-    Toggle3 = Enum.KeyCode.V,
-}
-local KeybindButtons = {}
-
-local function saveConfig()
-    pcall(function()
-        if writefile then
-            local data = {}
-            for k,v in pairs(toggleStates) do data["TOGGLE_"..k] = v.state end
-            for k,v in pairs(Keybinds) do data["KEY_"..k] = v.Name end
-            writefile(CONFIG_KEY..".json", game:GetService("HttpService"):JSONEncode(data))
-        end
-    end)
-end
-
-local function loadConfig()
-    pcall(function()
-        if readfile and isfile and isfile(CONFIG_KEY..".json") then
-            local ok, data = pcall(function() return game:GetService("HttpService"):JSONDecode(readfile(CONFIG_KEY..".json")) end)
-            if ok and data then
-                for k,_ in pairs(Keybinds) do
-                    if data["KEY_"..k] then pcall(function() Keybinds[k] = Enum.KeyCode[data["KEY_"..k]] end) end
-                end
-            end
-        end
-    end)
-end
-loadConfig()
+local function saveConfig() end
+local function loadConfig() end
 
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "EclipseX_UI"
+ScreenGui.Name = "EclipseX_Mini"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
--- قائمة أصغر: 280x440 بدل 360x580
+-- قائمة صغيرة جداً: 220x340
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 280, 0, 440)
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -220)
+MainFrame.Size = UDim2.new(0, 220, 0, 340)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -170)
 MainFrame.BackgroundColor3 = BG
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Thickness = 1.5
+MainStroke.Thickness = 1
 MainStroke.Color = ACCENT
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 -- Title Bar - أصغر
 local TitleBar = Instance.new("Frame", MainFrame)
-TitleBar.Size = UDim2.new(1, 0, 0, 36)
+TitleBar.Size = UDim2.new(1, 0, 0, 28)
 TitleBar.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
 TitleBar.BorderSizePixel = 0
-Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
 
 local TitleFix = Instance.new("Frame", TitleBar)
-TitleFix.Size = UDim2.new(1, 0, 0, 12)
-TitleFix.Position = UDim2.new(0, 0, 1, -12)
+TitleFix.Size = UDim2.new(1, 0, 0, 10)
+TitleFix.Position = UDim2.new(0, 0, 1, -10)
 TitleFix.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
 TitleFix.BorderSizePixel = 0
 
@@ -97,57 +63,55 @@ TitleLbl.Size = UDim2.new(1, 0, 1, 0)
 TitleLbl.BackgroundTransparency = 1
 TitleLbl.Text = "EclipseX"
 TitleLbl.Font = Enum.Font.GothamBlack
-TitleLbl.TextSize = 16
+TitleLbl.TextSize = 13
 TitleLbl.TextColor3 = WHITE
 
 -- Tabs - أصغر
 local TabContainer = Instance.new("Frame", MainFrame)
-TabContainer.Size = UDim2.new(1, -16, 0, 26)
-TabContainer.Position = UDim2.new(0, 8, 0, 42)
+TabContainer.Size = UDim2.new(1, -12, 0, 22)
+TabContainer.Position = UDim2.new(0, 6, 0, 32)
 TabContainer.BackgroundTransparency = 1
 
 local function makeTab(text, xScale, xPos)
     local t = Instance.new("TextButton", TabContainer)
-    t.Size = UDim2.new(xScale, -3, 1, 0)
-    t.Position = UDim2.new(xPos, 2, 0, 0)
+    t.Size = UDim2.new(xScale, -2, 1, 0)
+    t.Position = UDim2.new(xPos, 1, 0, 0)
     t.BackgroundColor3 = OFF_CLR
     t.Text = text
     t.Font = Enum.Font.GothamBold
-    t.TextSize = 10
+    t.TextSize = 9
     t.TextColor3 = Color3.fromRGB(160, 160, 160)
     t.BorderSizePixel = 0
-    Instance.new("UICorner", t).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", t).CornerRadius = UDim.new(0, 5)
     return t
 end
 
-local Tab1 = makeTab("MAIN", 0.33, 0)
-local Tab2 = makeTab("VISUAL", 0.33, 0.33)
-local Tab3 = makeTab("BINDS", 0.34, 0.66)
+local Tab1 = makeTab("MAIN", 0.5, 0)
+local Tab2 = makeTab("VISUAL", 0.5, 0.5)
 
 local function makeScrollFrame()
     local sf = Instance.new("ScrollingFrame", MainFrame)
-    sf.Size = UDim2.new(1, -16, 1, -110)
-    sf.Position = UDim2.new(0, 8, 0, 72)
+    sf.Size = UDim2.new(1, -12, 1, -82)
+    sf.Position = UDim2.new(0, 6, 0, 56)
     sf.BackgroundTransparency = 1
     sf.BorderSizePixel = 0
-    sf.ScrollBarThickness = 3
+    sf.ScrollBarThickness = 2
     sf.ScrollBarImageColor3 = ACCENT
     sf.CanvasSize = UDim2.new(0, 0, 0, 0)
     sf.AutomaticCanvasSize = Enum.AutomaticSize.Y
     sf.Visible = false
     local ll = Instance.new("UIListLayout", sf)
-    ll.Padding = UDim.new(0, 4)
+    ll.Padding = UDim.new(0, 3)
     ll.SortOrder = Enum.SortOrder.LayoutOrder
     return sf
 end
 
 local Tab1Frame = makeScrollFrame()
 local Tab2Frame = makeScrollFrame()
-local Tab3Frame = makeScrollFrame()
 Tab1Frame.Visible = true
 
-local frames = {Tab1Frame, Tab2Frame, Tab3Frame}
-local tabs = {Tab1, Tab2, Tab3}
+local frames = {Tab1Frame, Tab2Frame}
+local tabs = {Tab1, Tab2}
 
 local function selectTab(idx)
     for i, sf in ipairs(frames) do sf.Visible = (i == idx) end
@@ -162,19 +126,19 @@ for i, tb in ipairs(tabs) do
 end
 
 -- ============================================
--- LIBRARY API - Compact Version
+-- LIBRARY API - Mini Version
 -- ============================================
 
 local Library = {}
 
 function Library:AddSection(parent, text, order)
     local lbl = Instance.new("TextLabel", parent)
-    lbl.Size = UDim2.new(1, 0, 0, 20)
+    lbl.Size = UDim2.new(1, 0, 0, 16)
     lbl.BackgroundTransparency = 1
     lbl.Text = text
     lbl.TextColor3 = ACCENT
     lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 10
+    lbl.TextSize = 9
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.LayoutOrder = order or 1
     return lbl
@@ -182,26 +146,26 @@ end
 
 function Library:AddToggle(parent, name, order, callback, defaultOn)
     local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 34)
+    row.Size = UDim2.new(1, 0, 0, 28)
     row.BackgroundColor3 = CARD
     row.BorderSizePixel = 0
     row.LayoutOrder = order or 1
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
     
     local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(1, -60, 1, 0)
-    lbl.Position = UDim2.new(0, 10, 0, 0)
+    lbl.Size = UDim2.new(1, -50, 1, 0)
+    lbl.Position = UDim2.new(0, 8, 0, 0)
     lbl.BackgroundTransparency = 1
     lbl.Text = name
     lbl.TextColor3 = WHITE
     lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 11
+    lbl.TextSize = 10
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     
-    local pW, pH, dSz = 38, 20, 14
+    local pW, pH, dSz = 32, 16, 12
     local track = Instance.new("Frame", row)
     track.Size = UDim2.new(0, pW, 0, pH)
-    track.Position = UDim2.new(1, -(pW+10), 0.5, -pH/2)
+    track.Position = UDim2.new(1, -(pW+8), 0.5, -pH/2)
     local initState = defaultOn or false
     track.BackgroundColor3 = initState and ACCENT or OFF_CLR
     track.BorderSizePixel = 0
@@ -228,7 +192,6 @@ function Library:AddToggle(parent, name, order, callback, defaultOn)
         track.BackgroundColor3 = ns and ACCENT or OFF_CLR
         dot.Position = ns and UDim2.new(1, -dSz-2, 0.5, -dSz/2) or UDim2.new(0, 2, 0.5, -dSz/2)
         if callback then callback(ns) end
-        task.defer(saveConfig)
     end)
     
     return {
@@ -243,18 +206,18 @@ end
 
 function Library:AddButton(parent, text, order, callback)
     local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 32)
+    row.Size = UDim2.new(1, 0, 0, 26)
     row.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
     row.BorderSizePixel = 0
     row.LayoutOrder = order or 1
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
     
     local btn = Instance.new("TextButton", row)
     btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = text
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 11
+    btn.TextSize = 10
     btn.TextColor3 = ACCENT
     btn.MouseButton1Click:Connect(callback)
     
@@ -263,27 +226,27 @@ end
 
 function Library:AddSlider(parent, label, min, max, default, order, callback)
     local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 50)
+    row.Size = UDim2.new(1, 0, 0, 42)
     row.BackgroundColor3 = CARD
     row.BorderSizePixel = 0
     row.LayoutOrder = order or 1
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
     
     local value = default or min
     
     local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(1, -16, 0, 18)
-    lbl.Position = UDim2.new(0, 8, 0, 4)
+    lbl.Size = UDim2.new(1, -12, 0, 14)
+    lbl.Position = UDim2.new(0, 6, 0, 3)
     lbl.BackgroundTransparency = 1
     lbl.Text = label .. ": " .. value
     lbl.TextColor3 = WHITE
     lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 10
+    lbl.TextSize = 9
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     
     local sliderBg = Instance.new("Frame", row)
-    sliderBg.Size = UDim2.new(1, -16, 0, 4)
-    sliderBg.Position = UDim2.new(0, 8, 0, 26)
+    sliderBg.Size = UDim2.new(1, -12, 0, 3)
+    sliderBg.Position = UDim2.new(0, 6, 0, 22)
     sliderBg.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
     
@@ -352,98 +315,35 @@ function Library:SetToggleState(name, state)
 end
 
 -- ============================================
--- مثال: إضافة عناصر
+-- مثال: عناصر
 -- ============================================
 
 Library:AddSection(Tab1Frame, "COMBAT", 1)
-Library:AddToggle(Tab1Frame, "Aimbot", 2, function(v) print("Aimbot:", v) end)
-Library:AddToggle(Tab1Frame, "Trigger Bot", 3, function(v) print("Trigger:", v) end)
+Library:AddToggle(Tab1Frame, "Aimbot", 2, function(v) end)
+Library:AddToggle(Tab1Frame, "Trigger", 3, function(v) end)
 
 Library:AddSection(Tab1Frame, "MOVEMENT", 4)
-Library:AddToggle(Tab1Frame, "Speed Hack", 5, function(v) print("Speed:", v) end)
-Library:AddSlider(Tab1Frame, "Speed Value", 16, 200, 50, 6, function(v) print("Speed:", v) end)
-Library:AddToggle(Tab1Frame, "Fly Hack", 7, function(v) print("Fly:", v) end)
+Library:AddToggle(Tab1Frame, "Speed", 5, function(v) end)
+Library:AddSlider(Tab1Frame, "Speed", 16, 200, 50, 6, function(v) end)
+Library:AddToggle(Tab1Frame, "Fly", 7, function(v) end)
+Library:AddSlider(Tab1Frame, "Fly Speed", 20, 200, 50, 8, function(v) end)
 
-Library:AddSection(Tab1Frame, "ACTIONS", 8)
-Library:AddButton(Tab1Frame, "Kill All", 9, function() print("Kill All!") end)
-Library:AddButton(Tab1Frame, "Teleport", 10, function() print("TP!") end)
+Library:AddSection(Tab1Frame, "ACTIONS", 9)
+Library:AddButton(Tab1Frame, "Kill All", 10, function() end)
+Library:AddButton(Tab1Frame, "Teleport", 11, function() end)
 
 Library:AddSection(Tab2Frame, "ESP", 1)
-Library:AddToggle(Tab2Frame, "Player ESP", 2, function(v) print("ESP:", v) end, true)
-Library:AddToggle(Tab2Frame, "Boxes", 3, function(v) print("Boxes:", v) end)
-Library:AddToggle(Tab2Frame, "Tracers", 4, function(v) print("Tracers:", v) end)
+Library:AddToggle(Tab2Frame, "Player ESP", 2, function(v) end, true)
+Library:AddToggle(Tab2Frame, "Boxes", 3, function(v) end)
+Library:AddToggle(Tab2Frame, "Tracers", 4, function(v) end)
+Library:AddToggle(Tab2Frame, "Names", 5, function(v) end)
 
-Library:AddSection(Tab2Frame, "WORLD", 5)
-Library:AddToggle(Tab2Frame, "Full Bright", 6, function(v) print("Bright:", v) end)
-Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) print("Fog:", v) end)
-
--- Binds Tab
-Library:AddSection(Tab3Frame, "KEYBINDS", 1)
-
-local bindList = {
-    {"Toggle 1", "Toggle1"},
-    {"Toggle 2", "Toggle2"},
-    {"Toggle 3", "Toggle3"},
-}
-
-for idx, entry in ipairs(bindList) do
-    local displayName, keyName = entry[1], entry[2]
-    local row = Instance.new("Frame", Tab3Frame)
-    row.Size = UDim2.new(1, 0, 0, 34)
-    row.BackgroundColor3 = CARD
-    row.BorderSizePixel = 0
-    row.LayoutOrder = idx + 1
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
-    
-    local nameLbl = Instance.new("TextLabel", row)
-    nameLbl.Size = UDim2.new(1, -90, 1, 0)
-    nameLbl.Position = UDim2.new(0, 10, 0, 0)
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.Text = displayName
-    nameLbl.TextColor3 = WHITE
-    nameLbl.Font = Enum.Font.GothamBold
-    nameLbl.TextSize = 11
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local keyBtn = Instance.new("TextButton", row)
-    keyBtn.Size = UDim2.new(0, 70, 0, 24)
-    keyBtn.Position = UDim2.new(1, -78, 0.5, -12)
-    keyBtn.BackgroundColor3 = Color3.fromRGB(30, 20, 50)
-    keyBtn.Text = Keybinds[keyName] and tostring(Keybinds[keyName]):gsub("Enum.KeyCode.", "") or "NONE"
-    keyBtn.Font = Enum.Font.GothamBold
-    keyBtn.TextSize = 10
-    keyBtn.TextColor3 = ACCENT
-    keyBtn.BorderSizePixel = 0
-    Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 6)
-    KeybindButtons[keyName] = keyBtn
-    
-    keyBtn.MouseButton1Click:Connect(function()
-        if changingKeybind then return end
-        changingKeybind = keyName
-        keyBtn.Text = "..."
-        keyBtn.TextColor3 = Color3.fromRGB(255, 200, 50)
-        
-        local conn
-        conn = UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-                    Keybinds[keyName] = nil
-                    keyBtn.Text = "NONE"
-                else
-                    Keybinds[keyName] = input.KeyCode
-                    keyBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
-                end
-                keyBtn.TextColor3 = ACCENT
-                changingKeybind = nil
-                conn:Disconnect()
-                task.defer(saveConfig)
-            end
-        end)
-    end)
-end
+Library:AddSection(Tab2Frame, "WORLD", 6)
+Library:AddToggle(Tab2Frame, "Full Bright", 7, function(v) end)
+Library:AddToggle(Tab2Frame, "No Fog", 8, function(v) end)
 
 -- ============================================
--- Open/Close Button - أصغر
+-- Open/Close Button - صغير جداً
 -- ============================================
 do
     local OCGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -452,19 +352,19 @@ do
     OCGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     local OBtn = Instance.new("TextButton", OCGui)
-    OBtn.Size = UDim2.new(0, 42, 0, 42)
-    OBtn.Position = UDim2.new(0, 8, 0.5, -21)
+    OBtn.Size = UDim2.new(0, 36, 0, 36)
+    OBtn.Position = UDim2.new(0, 6, 0.5, -18)
     OBtn.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
     OBtn.Text = "💠"
-    OBtn.TextSize = 20
+    OBtn.TextSize = 16
     OBtn.Font = Enum.Font.GothamBold
     OBtn.TextColor3 = WHITE
     OBtn.BorderSizePixel = 0
     OBtn.Active = true
-    Instance.new("UICorner", OBtn).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", OBtn).CornerRadius = UDim.new(0, 8)
     
     local OS = Instance.new("UIStroke", OBtn)
-    OS.Thickness = 1.5
+    OS.Thickness = 1
     OS.Color = ACCENT
     
     local dragging, dragStart, startPos = false, nil, nil
@@ -513,15 +413,15 @@ do
     end)
 end
 
--- FPS
+-- FPS صغير
 do
     local FPSLbl = Instance.new("TextLabel", TitleBar)
-    FPSLbl.Size = UDim2.new(0, 50, 0, 14)
-    FPSLbl.Position = UDim2.new(1, -55, 0, 2)
+    FPSLbl.Size = UDim2.new(0, 40, 0, 12)
+    FPSLbl.Position = UDim2.new(1, -44, 0, 2)
     FPSLbl.BackgroundTransparency = 1
     FPSLbl.Text = "0 FPS"
     FPSLbl.Font = Enum.Font.GothamBold
-    FPSLbl.TextSize = 9
+    FPSLbl.TextSize = 8
     FPSLbl.TextColor3 = ACCENT
     FPSLbl.TextXAlignment = Enum.TextXAlignment.Right
     
@@ -537,5 +437,5 @@ do
     end)
 end
 
-print("EclipseX Compact UI Loaded!")
+print("EclipseX Mini UI Loaded!")
 return Library
