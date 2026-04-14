@@ -1,6 +1,6 @@
 --[[
     EclipseX Style UI Library - Red Version
-    قائمة صغيرة + أزرار يمين (3x2) + لون أحمر + قابل للسحب
+    زر الفتح: LZ - قابل للسحب
 ]]
 
 local Players = game:GetService("Players")
@@ -10,13 +10,13 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 -- Colors - أحمر
-local ACCENT  = Color3.fromRGB(255, 60, 60)      -- أحمر فاتح
+local ACCENT  = Color3.fromRGB(255, 60, 60)
 local WHITE   = Color3.fromRGB(240, 240, 240)
-local BG      = Color3.fromRGB(12, 8, 8)         -- أسود محمر
-local CARD    = Color3.fromRGB(22, 14, 14)       -- كرت محمر
-local OFF_CLR = Color3.fromRGB(50, 35, 35)       -- رمادي محمر
-local MOB_ON  = Color3.fromRGB(220, 60, 60)      -- أحمر للأزرار المشغلة
-local MOB_OFF = Color3.fromRGB(24, 10, 10)       -- أحمر غامق للأزرار المطفية
+local BG      = Color3.fromRGB(12, 8, 8)
+local CARD    = Color3.fromRGB(22, 14, 14)
+local OFF_CLR = Color3.fromRGB(50, 35, 35)
+local MOB_ON  = Color3.fromRGB(220, 60, 60)
+local MOB_OFF = Color3.fromRGB(24, 10, 10)
 
 -- State
 local toggleStates = {}
@@ -30,7 +30,6 @@ local function saveConfig()
     pcall(function()
         if writefile then
             local data = {positions = {}}
-            -- حفظ مواقع الأزرار
             for name, btn in pairs(mobBtnRefs) do
                 data.positions["mob_"..name] = {x = btn.Position.X.Offset, y = btn.Position.Y.Offset}
             end
@@ -38,6 +37,10 @@ local function saveConfig()
                 if not btn:GetAttribute("hasToggle") then
                     data.positions["mob_"..btn.Name] = {x = btn.Position.X.Offset, y = btn.Position.Y.Offset}
                 end
+            end
+            -- حفظ موقع زر LZ
+            if LZButton then
+                data.positions["LZButton"] = {x = LZButton.Position.X.Offset, y = LZButton.Position.Y.Offset}
             end
             writefile(CONFIG_KEY..".json", game:GetService("HttpService"):JSONEncode(data))
         end
@@ -380,7 +383,6 @@ function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
     local btn = Instance.new("TextButton", ScreenGui)
     btn.Size = UDim2.new(0, 48, 0, 48)
     
-    -- تحميل الموقع المحفوظ أو استخدام الافتراضي
     local savedPos = nil
     if toggleName then
         savedPos = savedPositions["mob_"..toggleName]
@@ -417,19 +419,16 @@ function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
     s.Thickness = 1
     s.Transparency = 0.3
     
-    -- جعل الزر قابل للسحب
     makeDraggable(btn, true)
     
     table.insert(mobileButtons, btn)
     if toggleName then mobBtnRefs[toggleName] = btn end
     
     btn.MouseButton1Click:Connect(function()
-        -- إذا كان الزر من النوع Toggle، نغير حالته
         if toggleName then
             local state = not Library:GetToggleState(toggleName)
             Library:SetToggleState(toggleName, state)
         end
-        -- ننفذ الكولباك دائماً
         callback()
     end)
     
@@ -458,7 +457,7 @@ end
 -- ============================================
 
 Library:AddSection(Tab1Frame, "COMBAT", 1)
-Library:AddToggle(Tab1Frame, "كل زق و صور", 2, function(v) end)
+Library:AddToggle(Tab1Frame, "Aimbot", 2, function(v) end)
 Library:AddToggle(Tab1Frame, "Trigger Bot", 3, function(v) end)
 
 Library:AddSection(Tab1Frame, "MOVEMENT", 4)
@@ -517,42 +516,60 @@ do
 end
 
 -- ============================================
--- Open/Close Button - يسار
+-- زر LZ - يسار الشاشة (قابل للسحب)
 -- ============================================
+local LZButton = nil
+
 do
     local OCGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-    OCGui.Name = "EclipseX_OpenClose"
+    OCGui.Name = "LZ_Button"
     OCGui.ResetOnSpawn = false
     OCGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    local OBtn = Instance.new("TextButton", OCGui)
-    OBtn.Size = UDim2.new(0, 36, 0, 36)
+    LZButton = Instance.new("TextButton", OCGui)
+    LZButton.Size = UDim2.new(0, 40, 0, 40)
     
-    local savedPos = savedPositions["mob_MenuButton"]
+    local savedPos = savedPositions["LZButton"]
     if savedPos then
-        OBtn.Position = UDim2.new(0, savedPos.x, 0, savedPos.y)
+        LZButton.Position = UDim2.new(0, savedPos.x, 0, savedPos.y)
     else
-        OBtn.Position = UDim2.new(0, 6, 0.5, -18)
+        LZButton.Position = UDim2.new(0, 10, 0.5, -20)
     end
     
-    OBtn.BackgroundColor3 = Color3.fromRGB(18, 10, 10)
-    OBtn.Text = "💠"
-    OBtn.TextSize = 16
-    OBtn.Font = Enum.Font.GothamBold
-    OBtn.TextColor3 = WHITE
-    OBtn.BorderSizePixel = 0
-    OBtn.Active = true
-    OBtn.Name = "MenuButton"
-    Instance.new("UICorner", OBtn).CornerRadius = UDim.new(0, 8)
+    LZButton.BackgroundColor3 = Color3.fromRGB(18, 10, 10)
+    LZButton.Text = "LZ"
+    LZButton.TextSize = 16
+    LZButton.Font = Enum.Font.GothamBlack
+    LZButton.TextColor3 = ACCENT
+    LZButton.BorderSizePixel = 0
+    LZButton.Active = true
+    LZButton.Name = "LZButton"
+    Instance.new("UICorner", LZButton).CornerRadius = UDim.new(0, 8)
     
-    local OS = Instance.new("UIStroke", OBtn)
-    OS.Thickness = 1
+    local OS = Instance.new("UIStroke", LZButton)
+    OS.Thickness = 1.5
     OS.Color = ACCENT
     
-    makeDraggable(OBtn, true)
+    -- تأثير نبضي على الـ Stroke
+    task.spawn(function()
+        while LZButton and LZButton.Parent do
+            for i = 0, 10 do OS.Thickness = 1.5 + i*0.1 task.wait(0.03) end
+            for i = 0, 10 do OS.Thickness = 2.5 - i*0.1 task.wait(0.03) end
+        end
+    end)
     
-    OBtn.MouseButton1Click:Connect(function()
+    makeDraggable(LZButton, true)
+    
+    LZButton.MouseButton1Click:Connect(function()
         Library:Toggle()
+        -- تأثير بصري عند الضغط
+        TweenService:Create(LZButton, TweenInfo.new(0.1), {
+            Size = UDim2.new(0, 44, 0, 44)
+        }):Play()
+        task.wait(0.1)
+        TweenService:Create(LZButton, TweenInfo.new(0.1), {
+            Size = UDim2.new(0, 40, 0, 40)
+        }):Play()
     end)
 end
 
@@ -610,5 +627,5 @@ task.spawn(function()
     end
 end)
 
-print("EclipseX Red UI - Mobile Buttons 3x2 - Loaded!")
+print("LZ Button UI Loaded! Drag the LZ button anywhere.")
 return Library
