@@ -1,7 +1,7 @@
 --[[
     EclipseX Style UI Library
-    نفس الستايل البنفسجي - بدون هاكات
-    للاستخدام كواجهة فقط
+    مع توثيق كامل للدوال
+    تقدر تضيف أزرارك وتتحكم فيها
 ]]
 
 local Players = game:GetService("Players")
@@ -241,13 +241,69 @@ for i, tb in ipairs(tabs) do
 end
 selectTab(1)
 
--- Toggle Creator
-local function makeToggle(parent, name, order, callback, defaultOn)
+-- ============================================
+-- LIBRARY API (الدوال اللي تقدر تستخدمها)
+-- ============================================
+
+local Library = {}
+
+--[[
+    إضافة تبويب جديد
+    Library:AddTab(name) -> Frame
+]]
+function Library:AddTab(name)
+    local oldCount = #tabs
+    local newCount = oldCount + 1
+    local xScale = 1 / newCount
+    
+    -- إعادة تحجيم التبويبات القديمة
+    for i, tb in ipairs(tabs) do
+        tb.Size = UDim2.new(xScale, -4, 1, 0)
+        tb.Position = UDim2.new((i-1) * xScale, 2, 0, 0)
+    end
+    
+    -- إنشاء تبويب جديد
+    local newTab = makeTab(name, xScale, oldCount * xScale)
+    table.insert(tabs, newTab)
+    
+    -- إنشاء صفحة جديدة
+    local newFrame = makeScrollFrame()
+    table.insert(frames, newFrame)
+    
+    -- تحديث الضغطات
+    local idx = newCount
+    newTab.MouseButton1Click:Connect(function() selectTab(idx) end)
+    
+    return newFrame
+end
+
+--[[
+    إضافة قسم
+    Library:AddSection(parent, text, order) -> Label
+]]
+function Library:AddSection(parent, text, order)
+    local lbl = Instance.new("TextLabel", parent)
+    lbl.Size = UDim2.new(1, 0, 0, 26)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = ACCENT
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 11
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = order or 1
+    return lbl
+end
+
+--[[
+    إضافة مفتاح Toggle
+    Library:AddToggle(parent, name, order, callback, defaultOn) -> Row, State
+]]
+function Library:AddToggle(parent, name, order, callback, defaultOn)
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1, 0, 0, 44)
     row.BackgroundColor3 = CARD
     row.BorderSizePixel = 0
-    row.LayoutOrder = order
+    row.LayoutOrder = order or 1
     Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
     
     local lbl = Instance.new("TextLabel", row)
@@ -298,10 +354,123 @@ local function makeToggle(parent, name, order, callback, defaultOn)
         task.defer(saveConfig)
     end)
     
+    return {
+        Row = row,
+        SetState = function(state)
+            toggleStates[name].state = state
+            track.BackgroundColor3 = state and ACCENT or OFF_CLR
+            dot.Position = state and UDim2.new(1, -dSz-3, 0.5, -dSz/2) or UDim2.new(0, 3, 0.5, -dSz/2)
+        end,
+        GetState = function() return toggleStates[name].state end,
+    }
+end
+
+--[[
+    إضافة زر عادي
+    Library:AddButton(parent, text, order, callback) -> Row
+]]
+function Library:AddButton(parent, text, order, callback)
+    local row = Instance.new("Frame", parent)
+    row.Size = UDim2.new(1, 0, 0, 40)
+    row.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    row.BorderSizePixel = 0
+    row.LayoutOrder = order or 1
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", row).Color = ACCENT
+    
+    local btn = Instance.new("TextButton", row)
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBlack
+    btn.TextSize = 13
+    btn.TextColor3 = ACCENT
+    btn.MouseButton1Click:Connect(callback)
+    
     return row
 end
 
-local function updateToggle(name, state)
+--[[
+    إضافة مدخل رقمي
+    Library:AddNumberInput(parent, label, default, order, callback) -> Row
+]]
+function Library:AddNumberInput(parent, label, default, order, callback)
+    local row = Instance.new("Frame", parent)
+    row.Size = UDim2.new(1, 0, 0, 44)
+    row.BackgroundColor3 = CARD
+    row.BorderSizePixel = 0
+    row.LayoutOrder = order or 1
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+    
+    local lbl = Instance.new("TextLabel", row)
+    lbl.Size = UDim2.new(1, -90, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.TextColor3 = WHITE
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 13
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local box = Instance.new("TextBox", row)
+    box.Size = UDim2.new(0, 68, 0, 28)
+    box.Position = UDim2.new(1, -78, 0.5, -14)
+    box.BackgroundColor3 = Color3.fromRGB(20, 18, 32)
+    box.Text = tostring(default)
+    box.TextColor3 = ACCENT
+    box.Font = Enum.Font.GothamBold
+    box.TextSize = 13
+    box.TextXAlignment = Enum.TextXAlignment.Center
+    box.BorderSizePixel = 0
+    box.ClearTextOnFocus = false
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+    
+    box.FocusLost:Connect(function()
+        local n = tonumber(box.Text)
+        if n then
+            if callback then callback(n) end
+            task.defer(saveConfig)
+        else
+            box.Text = tostring(default)
+        end
+    end)
+    
+    return row
+end
+
+--[[
+    إضافة زر موبايل
+    Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback) -> Button
+]]
+function Library:AddMobileButton(label, xOffset, yOffset, toggleName, callback)
+    local btn = Instance.new("TextButton", ScreenGui)
+    btn.Size = UDim2.new(0, 58, 0, 58)
+    btn.Position = UDim2.new(1, xOffset, 0.5, yOffset)
+    btn.BackgroundColor3 = MOB_OFF
+    btn.BackgroundTransparency = 0.1
+    btn.Text = label
+    btn.TextColor3 = WHITE
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 9
+    btn.TextWrapped = true
+    btn.BorderSizePixel = 0
+    btn.ZIndex = 20
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    local s = Instance.new("UIStroke", btn)
+    s.Color = ACCENT
+    s.Thickness = 1.5
+    s.Transparency = 0.3
+    table.insert(mobileButtons, btn)
+    if toggleName then mobBtnRefs[toggleName] = btn end
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+--[[
+    تحديث حالة Toggle
+    Library:SetToggleState(name, state)
+]]
+function Library:SetToggleState(name, state)
     local t = toggleStates[name]
     if not t then return end
     t.state = state
@@ -314,367 +483,77 @@ local function updateToggle(name, state)
     end
 end
 
--- Section Creator
-local function makeSection(parent, text, order)
-    local lbl = Instance.new("TextLabel", parent)
-    lbl.Size = UDim2.new(1, 0, 0, 26)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = ACCENT
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 11
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.LayoutOrder = order
-    return lbl
+--[[
+    الحصول على حالة Toggle
+    Library:GetToggleState(name) -> boolean
+]]
+function Library:GetToggleState(name)
+    return toggleStates[name] and toggleStates[name].state or false
 end
 
--- Number Input Creator
-local function makeNumInput(parent, labelText, defaultVal, order, onChanged)
-    local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, 0, 0, 44)
-    row.BackgroundColor3 = CARD
-    row.BorderSizePixel = 0
-    row.LayoutOrder = order
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
-    
-    local lbl = Instance.new("TextLabel", row)
-    lbl.Size = UDim2.new(1, -90, 1, 0)
-    lbl.Position = UDim2.new(0, 14, 0, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = labelText
-    lbl.TextColor3 = WHITE
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 13
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local box = Instance.new("TextBox", row)
-    box.Size = UDim2.new(0, 68, 0, 28)
-    box.Position = UDim2.new(1, -78, 0.5, -14)
-    box.BackgroundColor3 = Color3.fromRGB(20, 18, 32)
-    box.Text = tostring(defaultVal)
-    box.TextColor3 = ACCENT
-    box.Font = Enum.Font.GothamBold
-    box.TextSize = 13
-    box.TextXAlignment = Enum.TextXAlignment.Center
-    box.BorderSizePixel = 0
-    box.ClearTextOnFocus = false
-    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
-    
-    box.FocusLost:Connect(function()
-        local n = tonumber(box.Text)
-        if n then
-            if onChanged then onChanged(n) end
-            task.defer(saveConfig)
-        else
-            box.Text = tostring(defaultVal)
-        end
-    end)
-    
-    return row, box
+--[[
+    إظهار/إخفاء القائمة الرئيسية
+]]
+function Library:Show()
+    MainFrame.Visible = true
+end
+
+function Library:Hide()
+    MainFrame.Visible = false
+end
+
+function Library:Toggle()
+    MainFrame.Visible = not MainFrame.Visible
 end
 
 -- ============================================
--- FEATURES TAB (فاضي - للشكل فقط)
+-- مثال عملي على استخدام المكتبة
 -- ============================================
-makeSection(FeatFrame, "  COMBAT", 1)
-makeToggle(FeatFrame, "Bat Aimbot", 2, function(v) print("Bat Aimbot:", v) end)
-makeToggle(FeatFrame, "Anti Ragdoll", 3, function(v) print("Anti Ragdoll:", v) end)
-makeToggle(FeatFrame, "Ragdoll TP", 4, function(v) print("Ragdoll TP:", v) end)
-makeToggle(FeatFrame, "Unwalk", 5, function(v) print("Unwalk:", v) end)
 
-makeSection(FeatFrame, "  STEAL", 6)
-makeToggle(FeatFrame, "Auto Steal", 7, function(v) print("Auto Steal:", v) end)
+print("====================================")
+print("EclipseX Style UI Library Loaded!")
+print("Use Library:AddTab(), Library:AddToggle(), etc.")
+print("====================================")
 
-makeSection(FeatFrame, "  SPEED", 8)
-makeToggle(FeatFrame, "Slow Down", 9, function(v) print("Slow Down:", v) end)
+-- مثال: إضافة تبويب جديد وعناصر فيه
+local CustomTab = Library:AddTab("CUSTOM")
 
-makeSection(FeatFrame, "  DROP", 10)
-do
-    local dropBtn = Instance.new("TextButton", FeatFrame)
-    dropBtn.Size = UDim2.new(1, 0, 0, 40)
-    dropBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    dropBtn.Text = "▼  DO DROP"
-    dropBtn.Font = Enum.Font.GothamBlack
-    dropBtn.TextSize = 13
-    dropBtn.TextColor3 = ACCENT
-    dropBtn.BorderSizePixel = 0
-    dropBtn.LayoutOrder = 11
-    Instance.new("UICorner", dropBtn).CornerRadius = UDim.new(0, 10)
-    Instance.new("UIStroke", dropBtn).Color = ACCENT
-    dropBtn.MouseButton1Click:Connect(function() print("Drop clicked!") end)
-end
+Library:AddSection(CustomTab, "  MY CUSTOM SECTION", 1)
 
-do
-    local tpDownBtn = Instance.new("TextButton", FeatFrame)
-    tpDownBtn.Size = UDim2.new(1, 0, 0, 40)
-    tpDownBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
-    tpDownBtn.Text = "⬇  TP DOWN"
-    tpDownBtn.Font = Enum.Font.GothamBlack
-    tpDownBtn.TextSize = 13
-    tpDownBtn.TextColor3 = ACCENT
-    tpDownBtn.BorderSizePixel = 0
-    tpDownBtn.LayoutOrder = 12
-    Instance.new("UICorner", tpDownBtn).CornerRadius = UDim.new(0, 10)
-    Instance.new("UIStroke", tpDownBtn).Color = ACCENT
-    tpDownBtn.MouseButton1Click:Connect(function() print("TP Down clicked!") end)
-end
+Library:AddToggle(CustomTab, "My Custom Toggle", 2, function(state)
+    print("My Custom Toggle is now:", state)
+end, false)
 
-makeSection(FeatFrame, "  TAUNT", 13)
-do
-    local tauntRow = Instance.new("Frame", FeatFrame)
-    tauntRow.Size = UDim2.new(1, 0, 0, 44)
-    tauntRow.BackgroundColor3 = CARD
-    tauntRow.BorderSizePixel = 0
-    tauntRow.LayoutOrder = 14
-    Instance.new("UICorner", tauntRow).CornerRadius = UDim.new(0, 10)
-    
-    local tauntLbl = Instance.new("TextLabel", tauntRow)
-    tauntLbl.Size = UDim2.new(1, -70, 1, 0)
-    tauntLbl.Position = UDim2.new(0, 14, 0, 0)
-    tauntLbl.BackgroundTransparency = 1
-    tauntLbl.Text = "Taunt Spam"
-    tauntLbl.TextColor3 = WHITE
-    tauntLbl.Font = Enum.Font.GothamBold
-    tauntLbl.TextSize = 13
-    tauntLbl.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local pW, pH, dSz = 46, 24, 18
-    local track = Instance.new("Frame", tauntRow)
-    track.Size = UDim2.new(0, pW, 0, pH)
-    track.Position = UDim2.new(1, -(pW+12), 0.5, -pH/2)
-    track.BackgroundColor3 = OFF_CLR
-    track.BorderSizePixel = 0
-    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-    
-    local dot = Instance.new("Frame", track)
-    dot.Size = UDim2.new(0, dSz, 0, dSz)
-    dot.Position = UDim2.new(0, 3, 0.5, -dSz/2)
-    dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    dot.BorderSizePixel = 0
-    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-    
-    local tauntActive = false
-    local btn = Instance.new("TextButton", tauntRow)
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundTransparency = 1
-    btn.Text = ""
-    btn.MouseButton1Click:Connect(function()
-        tauntActive = not tauntActive
-        track.BackgroundColor3 = tauntActive and ACCENT or OFF_CLR
-        dot.Position = tauntActive and UDim2.new(1, -dSz-3, 0.5, -dSz/2) or UDim2.new(0, 3, 0.5, -dSz/2)
-        print("Taunt:", tauntActive)
-    end)
-end
+Library:AddButton(CustomTab, "CLICK ME", 3, function()
+    print("Button clicked!")
+end)
+
+Library:AddNumberInput(CustomTab, "Custom Value", 100, 4, function(value)
+    print("Value changed to:", value)
+end)
+
+-- مثال: إضافة زر موبايل جديد
+Library:AddMobileButton("CUSTOM\nBTN", -120, -350, nil, function()
+    print("Custom mobile button clicked!")
+end)
 
 -- ============================================
--- MOVEMENT TAB (فاضي - للشكل فقط)
+-- تبويبات جاهزة (للمثال فقط - فاضية)
 -- ============================================
-makeSection(MovFrame, "  AUTO PLAY (LOOP)", 1)
-makeToggle(MovFrame, "Auto Play Left", 2, function(v) print("Auto Play Left:", v) end)
-makeToggle(MovFrame, "Auto Play Right", 3, function(v) print("Auto Play Right:", v) end)
 
-makeSection(MovFrame, "  GALAXY", 4)
-makeToggle(MovFrame, "Galaxy Mode", 5, function(v) print("Galaxy Mode:", v) end)
-makeToggle(MovFrame, "Spin Bot", 6, function(v) print("Spin Bot:", v) end)
+Library:AddSection(FeatFrame, "  COMBAT", 1)
+Library:AddToggle(FeatFrame, "Bat Aimbot", 2, function(v) print("Bat Aimbot:", v) end)
+Library:AddToggle(FeatFrame, "Anti Ragdoll", 3, function(v) print("Anti Ragdoll:", v) end)
 
--- ============================================
--- VISUALS TAB (فاضي - للشكل فقط)
--- ============================================
-makeSection(VisFrame, "  PLAYER", 1)
-makeToggle(VisFrame, "Player ESP", 2, function(v) print("Player ESP:", v) end, true)
+Library:AddSection(MovFrame, "  MOVEMENT", 1)
+Library:AddToggle(MovFrame, "Speed Hack", 2, function(v) print("Speed Hack:", v) end)
+Library:AddToggle(MovFrame, "Fly Hack", 3, function(v) print("Fly Hack:", v) end)
 
-makeSection(VisFrame, "  PERFORMANCE", 3)
-makeToggle(VisFrame, "Optimizer + XRay", 4, function(v) print("Optimizer:", v) end)
+Library:AddSection(VisFrame, "  VISUALS", 1)
+Library:AddToggle(VisFrame, "Player ESP", 2, function(v) print("ESP:", v) end, true)
 
 -- ============================================
--- SETTINGS TAB (فاضي - للشكل فقط)
--- ============================================
-makeSection(SetFrame, "  SPEEDS", 1)
-makeNumInput(SetFrame, "Normal Speed", 60, 2, function(v) print("Normal Speed:", v) end)
-makeNumInput(SetFrame, "Slow Speed", 29, 3, function(v) print("Slow Speed:", v) end)
-
-makeSection(SetFrame, "  STEAL", 4)
-makeNumInput(SetFrame, "Steal Radius", 20, 5, function(v) print("Steal Radius:", v) end)
-makeNumInput(SetFrame, "Steal Duration", 0.35, 6, function(v) print("Steal Duration:", v) end)
-
-makeSection(SetFrame, "  GALAXY", 7)
-makeNumInput(SetFrame, "Gravity %", 42, 8, function(v) print("Gravity:", v) end)
-makeNumInput(SetFrame, "Hop Power", 35, 9, function(v) print("Hop Power:", v) end)
-makeNumInput(SetFrame, "Spin Speed", 19, 10, function(v) print("Spin Speed:", v) end)
-
-makeSection(SetFrame, "  CAMERA / BAT", 11)
-makeNumInput(SetFrame, "FOV", 70, 12, function(v) print("FOV:", v) end)
-makeNumInput(SetFrame, "Aimbot Speed", 60, 13, function(v) print("Aimbot Speed:", v) end)
-makeNumInput(SetFrame, "Engage Range", 5, 14, function(v) print("Engage Range:", v) end)
-
-makeSection(SetFrame, "  CONFIG", 15)
-do
-    local saveBtn = Instance.new("TextButton", SetFrame)
-    saveBtn.Size = UDim2.new(1, 0, 0, 40)
-    saveBtn.BackgroundColor3 = Color3.fromRGB(20, 60, 30)
-    saveBtn.Text = "💾  SAVE CONFIG"
-    saveBtn.Font = Enum.Font.GothamBlack
-    saveBtn.TextSize = 13
-    saveBtn.TextColor3 = WHITE
-    saveBtn.BorderSizePixel = 0
-    saveBtn.LayoutOrder = 16
-    Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 10)
-    saveBtn.MouseButton1Click:Connect(function()
-        saveConfig()
-        saveBtn.Text = "✔ SAVED!"
-        task.delay(1.5, function() saveBtn.Text = "💾  SAVE CONFIG" end)
-    end)
-end
-
--- ============================================
--- BINDS TAB
--- ============================================
-makeSection(BindFrame, "  KEYBINDS (click to rebind)", 1)
-
-do
-    local bindHint = Instance.new("TextLabel", BindFrame)
-    bindHint.Size = UDim2.new(1, 0, 0, 36)
-    bindHint.BackgroundColor3 = Color3.fromRGB(20, 12, 35)
-    bindHint.BackgroundTransparency = 0
-    bindHint.BorderSizePixel = 0
-    bindHint.Text = "Click a key button then press\nany key to rebind. CTRL = clear."
-    bindHint.TextColor3 = Color3.fromRGB(180, 160, 220)
-    bindHint.Font = Enum.Font.Gotham
-    bindHint.TextSize = 11
-    bindHint.TextWrapped = true
-    bindHint.LayoutOrder = 2
-    Instance.new("UICorner", bindHint).CornerRadius = UDim.new(0, 8)
-end
-
-local bindList = {
-    {"Auto Left", "AutoLeft"},
-    {"Auto Right", "AutoRight"},
-    {"Auto Steal", "AutoSteal"},
-    {"Bat Aimbot", "BatAimbot"},
-    {"Anti Ragdoll", "AntiRagdoll"},
-    {"Unwalk", "Unwalk"},
-    {"Slow Down", "SlowDown"},
-    {"Ragdoll TP", "RagdollTP"},
-    {"Drop", "Drop"},
-    {"Taunt", "Taunt"},
-    {"TP Down", "TPDown"},
-}
-
-for idx, entry in ipairs(bindList) do
-    local displayName, keyName = entry[1], entry[2]
-    local row = Instance.new("Frame", BindFrame)
-    row.Size = UDim2.new(1, 0, 0, 44)
-    row.BackgroundColor3 = CARD
-    row.BorderSizePixel = 0
-    row.LayoutOrder = idx + 2
-    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
-    
-    local nameLbl = Instance.new("TextLabel", row)
-    nameLbl.Size = UDim2.new(1, -110, 1, 0)
-    nameLbl.Position = UDim2.new(0, 14, 0, 0)
-    nameLbl.BackgroundTransparency = 1
-    nameLbl.Text = displayName
-    nameLbl.TextColor3 = WHITE
-    nameLbl.Font = Enum.Font.GothamBold
-    nameLbl.TextSize = 13
-    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local keyBtn = Instance.new("TextButton", row)
-    keyBtn.Size = UDim2.new(0, 90, 0, 30)
-    keyBtn.Position = UDim2.new(1, -98, 0.5, -15)
-    keyBtn.BackgroundColor3 = Color3.fromRGB(30, 20, 50)
-    keyBtn.Text = Keybinds[keyName] and tostring(Keybinds[keyName]):gsub("Enum.KeyCode.", "") or "NONE"
-    keyBtn.Font = Enum.Font.GothamBold
-    keyBtn.TextSize = 11
-    keyBtn.TextColor3 = ACCENT
-    keyBtn.BorderSizePixel = 0
-    Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 8)
-    KeybindButtons[keyName] = keyBtn
-    
-    keyBtn.MouseButton1Click:Connect(function()
-        if changingKeybind then return end
-        changingKeybind = keyName
-        keyBtn.Text = "Press key..."
-        keyBtn.TextColor3 = Color3.fromRGB(255, 200, 50)
-        
-        local conn
-        conn = UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
-                    Keybinds[keyName] = nil
-                    keyBtn.Text = "NONE"
-                else
-                    Keybinds[keyName] = input.KeyCode
-                    keyBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
-                end
-                keyBtn.TextColor3 = ACCENT
-                changingKeybind = nil
-                conn:Disconnect()
-                task.defer(saveConfig)
-            end
-        end)
-    end)
-end
-
--- ============================================
--- MOBILE BUTTONS
--- ============================================
-do
-    local gap = 68
-    local startY = -170
-    local col1 = -120
-    local col2 = -56
-    
-    local function makeMob(label, xOffset, yOffset, toggleName, onAct)
-        local btn = Instance.new("TextButton", ScreenGui)
-        btn.Size = UDim2.new(0, 58, 0, 58)
-        btn.Position = UDim2.new(1, xOffset, 0.5, yOffset)
-        btn.BackgroundColor3 = MOB_OFF
-        btn.BackgroundTransparency = 0.1
-        btn.Text = label
-        btn.TextColor3 = WHITE
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 9
-        btn.TextWrapped = true
-        btn.BorderSizePixel = 0
-        btn.ZIndex = 20
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-        local s = Instance.new("UIStroke", btn)
-        s.Color = ACCENT
-        s.Thickness = 1.5
-        s.Transparency = 0.3
-        table.insert(mobileButtons, btn)
-        if toggleName then mobBtnRefs[toggleName] = btn end
-        btn.MouseButton1Click:Connect(onAct)
-        return btn
-    end
-
-    makeMob("DROP", col1, startY + gap*0, nil, function() print("Drop clicked!") end)
-    makeMob("AUTO\nLEFT", col2, startY + gap*0, "Auto Play Left", function()
-        local ns = not (toggleStates["Auto Play Left"] and toggleStates["Auto Play Left"].state)
-        updateToggle("Auto Play Left", ns)
-        print("Auto Play Left:", ns)
-    end)
-    makeMob("AUTO\nBAT", col1, startY + gap*1, "Bat Aimbot", function()
-        local ns = not (toggleStates["Bat Aimbot"] and toggleStates["Bat Aimbot"].state)
-        updateToggle("Bat Aimbot", ns)
-        print("Bat Aimbot:", ns)
-    end)
-    makeMob("AUTO\nRIGHT", col2, startY + gap*1, "Auto Play Right", function()
-        local ns = not (toggleStates["Auto Play Right"] and toggleStates["Auto Play Right"].state)
-        updateToggle("Auto Play Right", ns)
-        print("Auto Play Right:", ns)
-    end)
-    makeMob("SLOW\nDOWN", col1, startY + gap*2, "Slow Down", function()
-        local ns = not (toggleStates["Slow Down"] and toggleStates["Slow Down"].state)
-        updateToggle("Slow Down", ns)
-        print("Slow Down:", ns)
-    end)
-    makeMob("TP\nDOWN", col2, startY + gap*2, nil, function() print("TP Down clicked!") end)
-end
-
--- ============================================
--- OPEN/CLOSE BUTTON (دائري يسار)
+-- زر فتح/إغلاق
 -- ============================================
 do
     local OCGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
@@ -706,7 +585,6 @@ do
         end
     end)
     
-    -- Drag
     do
         local dragging, dragStart, startPos = false, nil, nil
         OBtn.InputBegan:Connect(function(input)
@@ -728,7 +606,7 @@ do
     end
     
     OBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = not MainFrame.Visible
+        Library:Toggle()
         TweenService:Create(OS, TweenInfo.new(0.15), {
             Color = MainFrame.Visible and WHITE or ACCENT
         }):Play()
@@ -799,56 +677,4 @@ do
     end)
 end
 
--- ============================================
--- Keybind Handler
--- ============================================
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if changingKeybind then return end
-    if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-    
-    if Keybinds.AutoLeft and input.KeyCode == Keybinds.AutoLeft then
-        local ns = not (toggleStates["Auto Play Left"] and toggleStates["Auto Play Left"].state)
-        updateToggle("Auto Play Left", ns)
-        print("Auto Play Left:", ns)
-    elseif Keybinds.AutoRight and input.KeyCode == Keybinds.AutoRight then
-        local ns = not (toggleStates["Auto Play Right"] and toggleStates["Auto Play Right"].state)
-        updateToggle("Auto Play Right", ns)
-        print("Auto Play Right:", ns)
-    elseif Keybinds.AutoSteal and input.KeyCode == Keybinds.AutoSteal then
-        local ns = not (toggleStates["Auto Steal"] and toggleStates["Auto Steal"].state)
-        updateToggle("Auto Steal", ns)
-        print("Auto Steal:", ns)
-    elseif Keybinds.BatAimbot and input.KeyCode == Keybinds.BatAimbot then
-        local ns = not (toggleStates["Bat Aimbot"] and toggleStates["Bat Aimbot"].state)
-        updateToggle("Bat Aimbot", ns)
-        print("Bat Aimbot:", ns)
-    elseif Keybinds.AntiRagdoll and input.KeyCode == Keybinds.AntiRagdoll then
-        local ns = not (toggleStates["Anti Ragdoll"] and toggleStates["Anti Ragdoll"].state)
-        updateToggle("Anti Ragdoll", ns)
-        print("Anti Ragdoll:", ns)
-    elseif Keybinds.Unwalk and input.KeyCode == Keybinds.Unwalk then
-        local ns = not (toggleStates["Unwalk"] and toggleStates["Unwalk"].state)
-        updateToggle("Unwalk", ns)
-        print("Unwalk:", ns)
-    elseif Keybinds.SlowDown and input.KeyCode == Keybinds.SlowDown then
-        local ns = not (toggleStates["Slow Down"] and toggleStates["Slow Down"].state)
-        updateToggle("Slow Down", ns)
-        print("Slow Down:", ns)
-    elseif Keybinds.RagdollTP and input.KeyCode == Keybinds.RagdollTP then
-        local ns = not (toggleStates["Ragdoll TP"] and toggleStates["Ragdoll TP"].state)
-        updateToggle("Ragdoll TP", ns)
-        print("Ragdoll TP:", ns)
-    elseif Keybinds.Drop and input.KeyCode == Keybinds.Drop then
-        print("Drop key pressed!")
-    elseif Keybinds.Taunt and input.KeyCode == Keybinds.Taunt then
-        print("Taunt key pressed!")
-    elseif Keybinds.TPDown and input.KeyCode == Keybinds.TPDown then
-        print("TP Down key pressed!")
-    end
-end)
-
-print("====================================")
-print("EclipseX Style UI Library Loaded!")
-print("Empty UI - No hacks, just interface")
-print("====================================")
+return Library
