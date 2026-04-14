@@ -479,30 +479,29 @@ Library:AddToggle(Tab2Frame, "Full Bright", 6, function(v) end)
 Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) end)
 
 -- ============================================
--- أزرار الموبايل على اليمين - 3 أعمدة × صفين
+-- أزرار الموبايل - عمودين (3 في كل عمود)
 -- ============================================
 do
-    local startY = -100
-    local gapY = 55
-    local gapX = 55
-    local col1 = -110
-    local col2 = -55
+    local startY = -100   -- نقطة البداية العمودية
+    local gapY = 55       -- المسافة بين الأزرار عمودياً
+    local col1 = -80      -- العمود الأيسر
+    local col2 = -25      -- العمود الأيمن
     
-    -- الصف الأول
+    -- العمود الأيسر (3 أزرار)
     Library:AddMobileButton("AIMBOT", col1, startY, "Aimbot", function()
         print("Aimbot toggled!")
     end)
     
-    Library:AddMobileButton("SPEED", col2, startY, "Speed Hack", function()
+    Library:AddMobileButton("SPEED", col1, startY + gapY, "Speed Hack", function()
         print("Speed toggled!")
     end)
     
-    Library:AddMobileButton("FLY", col2 + gapX, startY, "Fly Hack", function()
+    Library:AddMobileButton("FLY", col1, startY + gapY*2, "Fly Hack", function()
         print("Fly toggled!")
     end)
     
-    -- الصف الثاني
-    Library:AddMobileButton("ESP", col1, startY + gapY, "Player ESP", function()
+    -- العمود الأيمن (3 أزرار)
+    Library:AddMobileButton("ESP", col2, startY, "Player ESP", function()
         print("ESP toggled!")
     end)
     
@@ -510,7 +509,7 @@ do
         print("Kill All!")
     end)
     
-    Library:AddMobileButton("TP", col2 + gapX, startY + gapY, nil, function()
+    Library:AddMobileButton("TP", col2, startY + gapY*2, nil, function()
         print("Teleport!")
     end)
 end
