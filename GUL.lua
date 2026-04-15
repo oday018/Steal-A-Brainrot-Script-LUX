@@ -484,8 +484,8 @@ Library:AddToggle(Tab2Frame, "No Fog", 7, function(v) end)
 do
     local startY = -100   -- نقطة البداية العمودية
     local gapY = 55       -- المسافة بين الأزرار عمودياً
-    local col1 = 5        -- العمود الأيسر (ملاصق لليسار)
-    local col2 = 60       -- العمود الأيمن (أبعد شوي عن اليسار)
+    local col1 = -100        -- العمود الأيسر (ملاصق لليسار)
+    local col2 = -45       -- العمود الأيمن (أبعد شوي عن اليسار)
     
     -- العمود الأيسر (3 أزرار) - أقصى اليسار
     Library:AddMobileButton("AIMBOT", col1, startY, "Aimbot", function()
